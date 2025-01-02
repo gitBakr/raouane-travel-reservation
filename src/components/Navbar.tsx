@@ -14,11 +14,11 @@ const Navbar = () => {
             <SheetTrigger className="md:hidden">
               <Menu className="h-6 w-6 text-white" />
             </SheetTrigger>
-            <SheetContent>
+            <SheetContent className="bg-gradient-to-r from-[#1A1F2C] to-[#2C3E50]">
               <div className="flex flex-col gap-4 mt-4">
-                <a href="#" className="text-lg hover:text-blue-500 transition-colors">Accueil</a>
-                <a href="#" className="text-lg hover:text-blue-500 transition-colors">À propos</a>
-                <a href="#" className="text-lg hover:text-blue-500 transition-colors">Contact</a>
+                <a href="#" className="text-lg text-white hover:text-blue-300 transition-colors">Accueil</a>
+                <a href="#" className="text-lg text-white hover:text-blue-300 transition-colors">À propos</a>
+                <a href="#" className="text-lg text-white hover:text-blue-300 transition-colors">Contact</a>
               </div>
             </SheetContent>
           </Sheet>
