@@ -2,23 +2,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { toast } from "sonner";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useState } from "react";
+import TripTypeStep from "./booking/TripTypeStep";
+import PersonalInfoStep from "./booking/PersonalInfoStep";
+import ContactStep from "./booking/ContactStep";
+import RoomTypeStep from "./booking/RoomTypeStep";
+import { BookingFormData } from "./booking/types";
 
 const formSchema = z.object({
   tripType: z.enum(["hajj", "omra"], {
@@ -37,8 +29,17 @@ const formSchema = z.object({
   }),
 });
 
+const steps = [
+  { title: "Type de voyage", component: TripTypeStep },
+  { title: "Informations personnelles", component: PersonalInfoStep },
+  { title: "Contact", component: ContactStep },
+  { title: "Hébergement", component: RoomTypeStep },
+];
+
 const BookingForm = () => {
-  const form = useForm<z.infer<typeof formSchema>>({
+  const [currentStep, setCurrentStep] = useState(0);
+  
+  const form = useForm<BookingFormData>({
     resolver: zodResolver(formSchema),
   });
 
@@ -47,160 +48,79 @@ const BookingForm = () => {
     toast.success("Réservation envoyée avec succès!");
   };
 
+  const next = async () => {
+    const fields = getFieldsForStep(currentStep);
+    const isValid = await form.trigger(fields);
+    
+    if (isValid) {
+      setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+    }
+  };
+
+  const previous = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 0));
+  };
+
+  const getFieldsForStep = (step: number): (keyof BookingFormData)[] => {
+    switch (step) {
+      case 0:
+        return ["tripType"];
+      case 1:
+        return ["civility", "firstName", "lastName", "nationality"];
+      case 2:
+        return ["email", "phone"];
+      case 3:
+        return ["roomType"];
+      default:
+        return [];
+    }
+  };
+
+  const CurrentStepComponent = steps[currentStep].component;
+  const progress = ((currentStep + 1) / steps.length) * 100;
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-2xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-8 text-[#1A1F2C]">Réservation de voyage</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="tripType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Type de voyage</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Sélectionnez le type de voyage" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="hajj">Hajj</SelectItem>
-                    <SelectItem value="omra">Omra</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="civility"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Civilité</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Sélectionnez votre civilité" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="mr">M.</SelectItem>
-                    <SelectItem value="mme">Mme</SelectItem>
-                    <SelectItem value="mlle">Mlle</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="space-y-2 mb-8">
+          <h2 className="text-3xl font-bold text-center text-[#1A1F2C]">
+            Réservation de voyage
+          </h2>
+          <Progress value={progress} className="w-full" />
+          <p className="text-center text-sm text-gray-500">
+            Étape {currentStep + 1} sur {steps.length}: {steps[currentStep].title}
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="firstName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Prénom</FormLabel>
-                <FormControl>
-                  <Input placeholder="Votre prénom" className="bg-white" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <CurrentStepComponent form={form} />
 
-          <FormField
-            control={form.control}
-            name="lastName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nom</FormLabel>
-                <FormControl>
-                  <Input placeholder="Votre nom" className="bg-white" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div className="flex justify-between gap-4 mt-8">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={previous}
+            disabled={currentStep === 0}
+          >
+            Précédent
+          </Button>
+          
+          {currentStep === steps.length - 1 ? (
+            <Button 
+              type="submit" 
+              className="bg-[#1A1F2C] hover:bg-[#2C3E50] transition-colors"
+            >
+              Réserver
+            </Button>
+          ) : (
+            <Button 
+              type="button"
+              onClick={next}
+              className="bg-[#1A1F2C] hover:bg-[#2C3E50] transition-colors"
+            >
+              Suivant
+            </Button>
+          )}
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input type="email" placeholder="votre@email.com" className="bg-white" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Téléphone</FormLabel>
-                <FormControl>
-                  <Input type="tel" placeholder="Votre numéro de téléphone" className="bg-white" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="nationality"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nationalité</FormLabel>
-                <FormControl>
-                  <Input placeholder="Votre nationalité" className="bg-white" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="roomType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Type d'hébergement</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Sélectionnez le type de chambre" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="4">Chambre 4 personnes</SelectItem>
-                    <SelectItem value="3">Chambre 3 personnes</SelectItem>
-                    <SelectItem value="2">Chambre 2 personnes</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <Button type="submit" className="w-full bg-[#1A1F2C] hover:bg-[#2C3E50] transition-colors">
-          Réserver
-        </Button>
       </form>
     </Form>
   );
