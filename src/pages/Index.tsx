@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import BookingForm from "@/components/BookingForm";
 import Footer from "@/components/Footer";
+import OffresSection from "@/components/OffresSection";
 
 const Index = () => {
   return (
@@ -19,6 +20,7 @@ const Index = () => {
           </div>
         </div>
       </div>
+      <OffresSection />
       <Footer />
     </div>
   );
